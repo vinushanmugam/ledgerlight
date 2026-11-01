@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LedgerLight</title>
+<style>
+:root{
+  --bg:#f3f7f6;--card:#ffffff;--ink:#0f1f2e;--mut:#62758a;--line:#e1e8ee;--soft:#edf3f2;
+  --brand:#0d9488;--brand-ink:#ffffff;--warm:#f59e0b;
+  --grad:linear-gradient(135deg,#14b8a6 0%,#0d9488 55%,#0f766e 100%);
+  --grad-warm:linear-gradient(90deg,#fcd34d,#f59e0b);
+  --grad-hi:linear-gradient(90deg,#fb7185,#dc2626);
+  --hi-bg:#fee9e7;--hi:#b42318;--med-bg:#fff2d9;--med:#8a5200;--ok-bg:#dcf6e9;--ok:#0b6b3a;--info-bg:#e2eefc;--info:#1d4f91;
+  --shadow:0 1px 2px rgba(15,31,46,.05),0 10px 28px -8px rgba(15,31,46,.10);
+  --shadow-lg:0 2px 4px rgba(15,31,46,.06),0 24px 48px -12px rgba(15,31,46,.18);
+  --ring:color-mix(in srgb,var(--brand) 26%,transparent);
+  --r:18px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0a1215;--card:#111c20;--ink:#e8f1f1;--mut:#8ea4aa;--line:#1f3036;--soft:#16252a;
+  --brand:#2dd4bf;--brand-ink:#04211e;--warm:#fbbf24;
+  --grad:linear-gradient(135deg,#5eead4 0%,#2dd4bf 50%,#14b8a6 100%);
+  --hi-bg:#3b1b19;--hi:#ff9d93;--med-bg:#3b2d0f;--med:#ffc86a;--ok-bg:#123222;--ok:#72e8a9;--info-bg:#15293f;--info:#9ec6f6;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -8px rgba(0,0,0,.5);--shadow-lg:0 24px 48px -12px rgba(0,0,0,.65);}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:radial-gradient(1100px 520px at 88% -8%,color-mix(in srgb,var(--brand) 16%,transparent),transparent 62%),
+             radial-gradient(900px 420px at -8% 2%,color-mix(in srgb,var(--warm) 11%,transparent),transparent 58%),var(--bg);
+  background-attachment:fixed;-webkit-font-smoothing:antialiased}
+.stat b,.amt,.bar em,.tbl td,.kv b,.det td:last-child{font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 20px 72px}
+a{color:var(--brand)}
+button{font:inherit;cursor:pointer;transition:transform .15s,box-shadow .15s,background .15s,border-color .15s,filter .15s}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;box-shadow:0 0 0 4px var(--ring);border-color:var(--brand)}
+.btn{background:var(--grad);color:var(--brand-ink);border:0;border-radius:12px;padding:10px 18px;font-weight:700;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--brand) 80%,transparent)}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}.btn:active{transform:none}.btn:disabled{opacity:.5;cursor:default;transform:none}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:none;font-weight:600}
+.btn.ghost:hover{border-color:var(--brand);color:var(--brand)}
+.btn.small{padding:6px 13px;font-size:14px;border-radius:10px}
+
+/* header */
+header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:13px}
+.brand h1{font-size:25px;margin:0;letter-spacing:-.025em;font-weight:800}
+.brand small{display:block;color:var(--mut);font-size:13.5px;margin-top:-2px}
+.pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{font-size:13px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 85%,transparent);backdrop-filter:blur(6px);border-radius:99px;padding:4px 13px;color:var(--mut);box-shadow:var(--shadow)}
+.pill b{color:var(--ink);font-weight:700}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:7px;box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 22%,transparent)}
+.dot.off{background:var(--warm);box-shadow:0 0 0 3px color-mix(in srgb,var(--warm) 25%,transparent)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:4px 0 22px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow)}
+.step .n{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--soft);color:var(--mut)}
+.step.done .n{background:var(--ok-bg);color:var(--ok)}
+.step.now{border-color:var(--brand);box-shadow:0 0 0 4px var(--ring),var(--shadow)}
+.step.now .n{background:var(--grad);color:var(--brand-ink)}
+.step b{display:block;font-size:14.5px;line-height:1.25}.step span{font-size:12.5px;color:var(--mut);line-height:1.25}
+
+/* layout + cards */
+.layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(330px,1fr);gap:24px;align-items:start}
+.layout>*{min-width:0}
+.side{position:sticky;top:14px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.card h2{font-size:17px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mut);font-size:14px;margin:0 0 12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hero{text-align:center;padding:44px 24px;background:radial-gradient(520px 220px at 50% -20%,color-mix(in srgb,var(--brand) 18%,transparent),transparent 70%),var(--card)}
+.hero h2{font-size:27px;letter-spacing:-.02em;margin:10px 0 0}
+.hero p{max-width:500px;margin:8px auto 22px;color:var(--mut)}
+.hero .row{justify-content:center}
+.hero-ico{width:64px;height:64px;margin:0 auto;border-radius:20px;background:var(--grad);display:grid;place-items:center;box-shadow:0 14px 28px -10px color-mix(in srgb,var(--brand) 70%,transparent)}
+.hero-ico svg{width:32px;height:32px;stroke:var(--brand-ink)}
+
+/* data bar + stats */
+.databar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 2px 12px;color:var(--mut);font-size:14px}
+.databar b{color:var(--ink)}
+.stats,.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px 14px 20px;box-shadow:var(--shadow);--acc:var(--brand)}
+.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--acc)}
+.stats .stat:nth-child(2),.tiles .stat:nth-child(1){--acc:#16a34a}
+.stats .stat:nth-child(3),.tiles .stat:nth-child(2){--acc:var(--warm)}
+.stats .stat:nth-child(4),.stat.risk{--acc:#dc2626}
+.tiles .stat:nth-child(3){--acc:var(--brand)}.tiles .stat:nth-child(4){--acc:#6366f1}
+.stat b{display:block;font-size:26px;line-height:1.2;letter-spacing:-.02em}.stat span{font-size:13px;color:var(--mut)}
+.stat.risk b{color:var(--hi)}
+.pos{color:var(--ok)}.neg{color:var(--hi)}
+
+/* TABS: the main navigation, deliberately loud */
+.tabs{display:flex;gap:6px;padding:6px;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg);margin:2px 0 18px;position:sticky;top:10px;z-index:6}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;border:0;background:transparent;color:var(--mut);padding:13px 12px;border-radius:15px;font-weight:700;font-size:15.5px;white-space:nowrap}
+.tab svg{width:20px;height:20px;flex:none}
+.tab:hover{background:var(--soft);color:var(--ink)}
+.tab.on{background:var(--grad);color:var(--brand-ink);box-shadow:0 10px 22px -8px color-mix(in srgb,var(--brand) 85%,transparent);transform:translateY(-1px)}
+.tab .cnt{font-style:normal;font-size:12.5px;font-weight:800;border-radius:99px;padding:1px 9px;background:var(--soft);color:var(--ink);min-width:24px;text-align:center}
+.tab.on .cnt{background:rgba(255,255,255,.28);color:inherit}
+.tab.alert:not(.on) .cnt{background:var(--hi-bg);color:var(--hi)}
+
+/* chart: where money is stuck + ranked lists */
+.bars{display:grid;gap:9px}
+.bar{display:grid;grid-template-columns:170px 1fr 88px;gap:12px;align-items:center;font-size:14.5px}
+.bar i{display:block;height:12px;border-radius:99px;background:var(--grad-warm)}.bar i.high{background:var(--grad-hi)}
+.bar em{font-style:normal;text-align:right;font-weight:700}
+.rank .bar{grid-template-columns:minmax(90px,160px) 1fr 88px}.rank .bar span{line-height:1.25}
+.rank .bar i.in{background:var(--grad)}.rank .bar i.out{background:var(--grad-warm)}
+
+/* issues list */
+.toolbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.chip{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:5px 13px;font-size:14px;font-weight:500}
+.chip:hover{border-color:var(--brand);color:var(--brand)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+select{font:inherit;font-size:14px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);margin-left:auto}
+.f{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px 16px 24px;margin-bottom:12px;box-shadow:var(--shadow);transition:box-shadow .2s,transform .2s}
+.f:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.f::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:5px;border-radius:0 6px 6px 0;background:var(--warm)}
+.f.high::before{background:linear-gradient(180deg,#fb7185,#dc2626)}
+.f-top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.badge{display:inline-block;font-size:11.5px;font-weight:800;border-radius:99px;padding:3px 11px;letter-spacing:.04em}
+.badge.high{background:var(--hi-bg);color:var(--hi)}.badge.medium{background:var(--med-bg);color:var(--med)}
+.badge.PAID,.badge.MARKED_AS_PAID{background:var(--ok-bg);color:var(--ok)}
+.badge.SENT,.badge.UNPAID,.badge.PARTIALLY_PAID,.badge.SCHEDULED{background:var(--info-bg);color:var(--info)}
+.badge.DRAFT,.badge.CANCELLED{background:var(--soft);color:var(--mut)}
+.f h3{font-size:17px;margin:7px 0 1px;letter-spacing:-.01em}.f .who{color:var(--mut);font-size:14px}
+.f .amt{font-weight:800;font-size:21px;white-space:nowrap;letter-spacing:-.02em}
+.f p{margin:9px 0;color:color-mix(in srgb,var(--ink) 88%,var(--mut))}.f .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.det{margin-top:14px;background:var(--soft);border-radius:14px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:14px}
+.det h4{margin:0 0 7px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:2px 0}.kv span{color:var(--mut)}
+.det table{width:100%;border-collapse:collapse}.det td{padding:3px 0;vertical-align:top}.det td:last-child{text-align:right;white-space:nowrap;padding-left:8px;font-weight:700}
+.ok-card{text-align:center;padding:34px;color:var(--ok);background:var(--ok-bg);border-radius:var(--r);font-weight:700}
+
+/* invoices table */
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:11px 10px;border-bottom:1px solid var(--line)}.tbl td.r,.tbl th.r{text-align:right}
+.tbl tbody tr:hover{background:var(--soft)}.tbl tbody tr:last-child td{border-bottom:0}
+.scroll{overflow-x:auto}
+
+/* approvals / outbox / chat */
+.act{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;font-size:14.5px}
+.act.pending{border-color:color-mix(in srgb,var(--warm) 60%,var(--line));background:var(--med-bg)}
+.act pre,.msg-line pre{white-space:pre-wrap;font:inherit;margin:6px 0 0;color:var(--mut)}
+.msg-line{border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:10px;font-size:14px}
+details summary{cursor:pointer}
+.chat{max-height:430px;overflow:auto;padding-right:2px}
+.msg{margin:12px 0}
+.msg.u{background:var(--grad);color:var(--brand-ink);padding:9px 14px;border-radius:16px 16px 4px 16px;margin-left:40px;font-weight:500}
+.msg.a{background:var(--soft);padding:11px 15px;border-radius:16px 16px 16px 4px}
+.msg.a p{margin:0 0 8px}.msg.a p:last-child{margin:0}.msg.a ul{margin:4px 0 8px;padding-left:20px}.msg.a h4{margin:8px 0 4px}
+.msg code{background:var(--card);padding:0 5px;border-radius:5px}.msg hr{border:0;border-top:1px solid var(--line)}
+.tools{font-size:12.5px;color:var(--mut);display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.tools span{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:1px 10px}
+.typing i{display:inline-block;width:7px;height:7px;margin-right:4px;border-radius:50%;background:var(--mut);animation:b 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
+.ask{display:flex;gap:8px;margin-top:12px}
+.ask input,.dlg input,.dlg textarea{font:inherit;padding:10px 13px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.ask input{flex:1;min-width:0}
+.suggest{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.suggest .chip{font-size:13px;text-align:left}
+
+/* email dialog */
+dialog{border:1px solid var(--line);border-radius:22px;background:var(--card);color:var(--ink);padding:0;width:min(660px,94vw);box-shadow:var(--shadow-lg)}
+dialog::backdrop{background:rgba(8,16,20,.55);backdrop-filter:blur(3px)}
+.dlg{padding:24px}.dlg h2{margin:0 0 4px;font-size:21px;letter-spacing:-.02em}
+.dlg label{display:block;font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin:14px 0 5px}
+.dlg input,.dlg textarea{width:100%}.dlg textarea{min-height:230px;resize:vertical;line-height:1.55}
+.dlg .to{padding:10px 13px;border-radius:12px;background:var(--soft);font-weight:700}
+.note{font-size:13.5px;border-radius:12px;padding:9px 13px;margin-top:10px;background:var(--info-bg);color:var(--info)}
+.note.warn{background:var(--med-bg);color:var(--med)}
+
+/* money charts */
+.mchart{display:flex;gap:16px;align-items:flex-end;height:200px;overflow-x:auto;padding-top:6px}
+.mg{flex:1;min-width:76px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.mbars{display:flex;gap:6px;align-items:flex-end;height:158px;justify-content:center}
+.mbars i{display:block;width:28px;border-radius:8px 8px 3px 3px;min-height:3px}
+.mg small{color:var(--mut);font-size:12.5px;margin-top:6px;font-weight:600}
+.in{background:var(--grad)}.out{background:var(--grad-warm)}
+.legend{display:flex;gap:18px;font-size:13.5px;color:var(--mut);margin:0 0 8px}
+.legend b{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:7px;vertical-align:-1px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:14px;font-size:15px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:92vw;z-index:20}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.banner{background:var(--hi-bg);color:var(--hi);border-radius:14px;padding:11px 16px;margin-bottom:16px}
+
+@media (max-width:960px){.layout{grid-template-columns:minmax(0,1fr)}.side{position:static}.steps{grid-template-columns:1fr 1fr}.stats,.tiles{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}}
+@media (max-width:560px){
+  .wrap{padding:16px 14px 60px}
+  .det{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.f-top{flex-direction:column}
+  .bar{grid-template-columns:96px 1fr 86px;font-size:13px}.rank .bar{grid-template-columns:96px 1fr 86px}.stat b{font-size:21px}
+  .tab{flex-direction:column;gap:3px;font-size:12.5px;padding:9px 4px;white-space:normal;text-align:center;line-height:1.2}
+  .tab svg{width:20px;height:20px}
+}
+</style></head>
+<body><div class="wrap">
+
+<header>
+  <div class="brand">
+    <svg width="44" height="44" viewBox="0 0 34 34" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14b8a6"/><stop offset="1" stop-color="#0f766e"/></linearGradient><radialGradient id="lb" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></radialGradient></defs><rect width="34" height="34" rx="10" fill="url(#lg)"/><circle cx="17" cy="12" r="6" fill="url(#lb)"/><rect x="8" y="21.5" width="18" height="2.6" rx="1.3" fill="#fff"/><rect x="8" y="26.5" width="12" height="2.6" rx="1.3" fill="#fff" opacity=".7"/></svg>
+    <div><h1>LedgerLight</h1><small>Match PayPal invoices to your bank, fix what's off</small></div>
+  </div>
+  <div class="pills" id="pills"></div>
+</header>
+
+<div class="steps" id="steps"></div>
+<div id="banner"></div>
+
+<div class="layout">
+  <main id="main"></main>
+  <aside class="side">
+    <section class="card" id="approvals"></section>
+    <section class="card" id="outbox"></section>
+    <section class="card">
+      <h2>Ask LedgerLight</h2>
+      <p class="sub">Your assistant reads the same numbers you see. It can suggest fixes, but only you can approve them.</p>
+      <div class="suggest" id="suggest"></div>
+      <div class="chat" id="chat" aria-live="polite"></div>
+      <div class="ask"><input id="q" type="text" placeholder="Ask about your invoices…" aria-label="Ask a question"><button class="btn" id="send">Send</button></div>
+    </section>
+  </aside>
+</div>
+<dialog id="mail"><div class="dlg">
+  <h2>Email customer</h2><p class="sub" id="mFor"></p>
+  <label>To</label><div class="to" id="mTo"></div>
+  <div id="mNote"></div>
+  <label for="mSubj">Subject</label><input id="mSubj" type="text">
+  <label for="mBody">Message (edit anything you like)</label><textarea id="mBody"></textarea>
+  <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn ghost" data-closemail="1">Cancel</button><button class="btn" id="mSend" data-sendmail="1">Send email</button></div>
+</div></dialog>
+<input id="file" type="file" accept=".csv" hidden>
+<div class="toast" id="toast" role="status"></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money=n=>'$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const LABEL={MISSING_DEPOSIT:'Money missing from bank',OVERDUE:'Overdue invoice',DUPLICATE_PAYMENT:'Paid twice',OVERPAID:'Overpaid',PARTIAL:'Partly paid',STATUS_MISMATCH:'PayPal status out of date',UNMATCHED_DEPOSIT:'Unknown deposit'};
+const TOOLNAME={get_reconciliation_report:'checked your books',get_invoice:'looked up an invoice',propose_record_payment:'proposed a fix'};
+const SUGGEST=['What should I deal with first?','Draft a reminder for the most overdue invoice','Fix PayPal statuses the bank already covers','Explain the double payment'];
+const S={analytics:null,outbox:[],status:null,report:null,invoices:[],actions:[],filter:'all',sort:'priority',tab:'issues',open:new Set(),history:[],error:''};
+
+async function j(u,o){const r=await fetch(u,o);let b={};try{b=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(b.detail||r.statusText);return b}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),3200)}
+
+function md(src){
+  const inl=t=>t.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`(.+?)`/g,'<code>$1</code>');
+  let out='',list=false;
+  for(const line of esc(src).split('\n')){
+    let m=line.match(/^\s*[-*•]\s+(.*)/)||line.match(/^\s*\d+[.)]\s+(.*)/);
+    if(m){if(!list){out+='<ul>';list=true}out+='<li>'+inl(m[1])+'</li>';continue}
+    if(list){out+='</ul>';list=false}
+    if(m=line.match(/^#{1,6}\s+(.*)/))out+='<h4>'+inl(m[1])+'</h4>';
+    else if(/^\s*-{3,}\s*$/.test(line))out+='<hr>';
+    else if(line.trim())out+='<p>'+inl(line)+'</p>';
+  }
+  return out+(list?'</ul>':'');
+}
+
+async function load(){
+  S.error='';
+  const [st,ac,ob]=await Promise.all([j('/api/status'),j('/api/actions'),j('/api/outbox')]);
+  S.status=st;S.actions=ac;S.outbox=ob;
+  try{[S.report,S.invoices,S.analytics]=await Promise.all([j('/api/report'),j('/api/invoices'),j('/api/analytics')])}
+  catch(e){S.error=e.message}
+  render();
+}
+
+function render(){renderPills();renderSteps();renderBanner();renderMain();renderApprovals();renderOutbox();renderSuggest()}
+
+function renderPills(){
+  const s=S.status||{};
+  $('#pills').innerHTML=`<span class="pill"><span class="dot"></span>PayPal <b>${esc(s.paypal_mode||'…')}</b></span>
+    <span class="pill"><span class="dot ${s.agent==='claude'?'':'off'}"></span>Assistant <b>${s.agent==='claude'?'Claude':'basic mode'}</b></span>
+    <span class="pill"><span class="dot ${s.email==='smtp'?'':'off'}"></span>Email <b>${s.email==='smtp'?'connected':'demo mode'}</b></span>`;
+}
+
+function renderSteps(){
+  const loaded=S.report&&S.report.ledger_loaded, n=S.invoices.length;
+  const exc=loaded?S.report.findings.length:0;
+  const pend=S.actions.filter(a=>a.status==='pending').length, done=S.actions.some(a=>a.status==='executed');
+  const steps=[
+    {t:'Connect PayPal',d:S.report?`${n} invoice${n===1?'':'s'} found`:'Connecting…',done:!!S.report},
+    {t:'Add bank activity',d:loaded?`${S.status.ledger_rows} bank rows loaded`:'Upload CSV or try sample',done:loaded},
+    {t:'Review issues',d:loaded?`${exc} to look at`:'Waiting for bank data',done:loaded&&exc===0},
+    {t:'Approve fixes',d:pend?`${pend} waiting for you`:(done?'Fix recorded in PayPal':'Nothing queued yet'),done:done&&!pend}];
+  const cur=steps.findIndex(s=>!s.done);
+  $('#steps').innerHTML=steps.map((s,i)=>`<div class="step ${s.done?'done':''} ${i===cur?'now':''}"><div class="n">${s.done?'✓':i+1}</div><div><b>${s.t}</b><span>${esc(s.d)}</span></div></div>`).join('');
+}
+
+function renderBanner(){$('#banner').innerHTML=S.error?`<div class="banner"><b>Couldn't reach PayPal.</b> ${esc(S.error)}</div>`:''}
+
+function renderMain(){
+  const m=$('#main'),r=S.report;
+  if(!r){m.innerHTML=S.error?'':'<div class="card">Loading…</div>';return}
+  if(!r.ledger_loaded){
+    m.innerHTML=`<div class="card hero"><div class="hero-ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg></div><h2>Let's check your books</h2>
+      <p>We found <b>${S.invoices.length} invoices</b> in PayPal. Add your bank activity and LedgerLight will match each deposit to an invoice and point out anything that looks off.</p>
+      <div class="row"><button class="btn" id="sampleBtn">Try the sample bank ledger</button><button class="btn ghost" id="uploadBtn">Upload my bank CSV</button></div>
+      <p style="font-size:13px;margin-top:16px">CSV columns needed: <code>date</code>, <code>amount</code>, <code>description</code>. Your file is only held in this app's memory while it runs.</p></div>`;
+    $('#sampleBtn').onclick=useSample;$('#uploadBtn').onclick=()=>$('#file').click();return}
+  const sm=r.summary,f=r.findings;
+  const ICON={
+    issues:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+    invoices:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>',
+    money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 9v9M17 5v13"/></svg>'};
+  const tab=(k,label,cnt,cls='')=>`<button class="tab ${cls} ${S.tab===k?'on':''}" data-tab="${k}">${ICON[k]}<span>${label}</span>${cnt!=null?`<em class="cnt">${cnt}</em>`:''}</button>`;
+  let html=`<div class="databar"><span><b>${S.status.ledger_rows}</b> bank rows loaded</span><div class="row"><button class="btn ghost small" id="uploadBtn">Replace bank data</button><button class="btn ghost small" id="sampleBtn">Use sample ledger</button><button class="btn ghost small" id="refreshBtn">Refresh</button></div></div>
+  <div class="stats">
+    <div class="stat"><b>${sm.invoices_checked}</b><span>Invoices checked</span></div>
+    <div class="stat"><b>${sm.reconciled}</b><span>Matched &amp; settled</span></div>
+    <div class="stat"><b>${sm.exceptions}</b><span>Need a look</span></div>
+    <div class="stat risk"><b>${money(sm.amount_at_risk)}</b><span>Money to chase or check</span></div></div>
+  <nav class="tabs" role="tablist" aria-label="Sections">${tab('issues','Issues',f.length,f.length?'alert':'')}${tab('invoices','All invoices',S.invoices.length)}${tab('money','Money in &amp; out',null)}</nav>`;
+  let stuck='';
+  if(f.length){
+    const by={};f.forEach(x=>{(by[x.type]??={amt:0,high:false}).amt+=x.amount;if(x.severity==='high')by[x.type].high=true});
+    const max=Math.max(...Object.values(by).map(v=>v.amt));
+    stuck=`<div class="card" style="margin-bottom:16px"><h2>Where the money is stuck</h2><p class="sub">Biggest problems first. Red means urgent.</p><div class="bars">`+
+      Object.entries(by).sort((a,b)=>b[1].amt-a[1].amt).map(([t,v])=>`<div class="bar"><span>${LABEL[t]}</span><i class="${v.high?'high':''}" style="width:${Math.max(4,v.amt/max*100)}%"></i><em>${money(v.amt)}</em></div>`).join('')+`</div></div>`}
+  html+=S.tab==='issues'?stuck+issuesHTML(f):S.tab==='money'?moneyHTML():invoicesHTML();
+  m.innerHTML=html;
+  $('#uploadBtn').onclick=()=>$('#file').click();$('#sampleBtn').onclick=useSample;$('#refreshBtn').onclick=()=>load().then(()=>toast('Refreshed'));
+}
+
+function issuesHTML(all){
+  if(!all.length)return '<div class="ok-card">All clear. Every invoice matches your bank. 🎉</div>';
+  const types=[...new Set(all.map(x=>x.type))];
+  let list=all.filter(x=>S.filter==='all'||x.type===S.filter||x.severity===S.filter);
+  if(S.sort==='amount')list=[...list].sort((a,b)=>b.amount-a.amount);
+  const cnt=t=>all.filter(x=>x.type===t).length;
+  const chips=[['all',`Everything (${all.length})`],['high','Urgent'],...types.map(t=>[t,`${LABEL[t]} (${cnt(t)})`])];
+  let h=`<div class="toolbar">${chips.map(([k,l])=>`<button class="chip ${S.filter===k?'on':''}" data-filter="${k}">${l}</button>`).join('')}
+    <select id="sort" aria-label="Sort"><option value="priority" ${S.sort==='priority'?'selected':''}>Most urgent first</option><option value="amount" ${S.sort==='amount'?'selected':''}>Biggest amount first</option></select></div>`;
+  h+=list.map(x=>{const open=S.open.has(x.id);
+    return `<article class="f ${x.severity}"><div class="f-top"><div><span class="badge ${x.severity}">${x.severity==='high'?'URGENT':'CHECK'}</span>
+      <h3>${LABEL[x.type]}</h3><div class="who">${x.invoice_number?esc(x.invoice_number)+' · '+esc(x.customer):'No matching invoice'}</div></div><div class="amt">${money(x.amount)}</div></div>
+      <p>${esc(x.detail)}</p>
+      <div class="acts">${x.suggested_action?(S.actions.some(a=>a.status==='pending'&&a.tool==='record_payment'&&a.invoice_id===x.invoice_id)?`<button class="btn ghost small" disabled>Waiting for your approval →</button>`:`<button class="btn small" data-fix="${x.id}">Fix status in PayPal</button>`):''}
+      ${MAILABLE.has(x.type)?`<button class="btn small" data-mail="${x.id}">Email customer</button>`:''}
+      <button class="btn ghost small" data-open="${x.id}">${open?'Hide details':'Show details'}</button>
+      <button class="btn ghost small" data-explain="${x.id}">Ask assistant</button></div>
+      ${open?detailsHTML(x):''}</article>`}).join('');
+  return h||'<p class="sub">Nothing in this filter.</p>';
+}
+function detailsHTML(x){
+  const i=x.invoice;
+  const inv=i?`<div><h4>PayPal invoice</h4><div class="kv"><span>Status</span><b>${esc(i.status)}</b></div><div class="kv"><span>Invoice total</span><b>${money(i.total)}</b></div><div class="kv"><span>Paid so far</span><b>${money(i.paid_amount)}</b></div><div class="kv"><span>Still due</span><b>${money(i.due_amount)}</b></div><div class="kv"><span>Due date</span><b>${esc(i.due_date||'—')}</b></div></div>`:'<div><h4>PayPal invoice</h4><p class="sub">No invoice matches this deposit.</p></div>';
+  const rows=x.ledger.length?`<table>${x.ledger.map(r=>`<tr><td>${esc(r.date)}<br><span style="color:var(--mut)">${esc(r.description)}</span></td><td>${money(r.amount)}</td></tr>`).join('')}</table>`:'<p class="sub">No matching bank deposit found.</p>';
+  return `<div class="det">${inv}<div><h4>Bank activity</h4>${rows}</div></div>`;
+}
+function invoicesHTML(){
+  return `<div class="card scroll"><table class="tbl"><thead><tr><th>Invoice</th><th>Customer</th><th>PayPal status</th><th class="r">Total</th><th class="r">Paid</th><th>Due</th></tr></thead><tbody>`+
+   S.invoices.map(i=>`<tr><td>${esc(i.number)}</td><td>${esc(i.customer)}</td><td><span class="badge ${esc(i.status)}">${esc(String(i.status).replace(/_/g,' '))}</span></td><td class="r">${money(i.total)}</td><td class="r">${money(i.paid_amount)}</td><td>${esc(i.due_date||'—')}</td></tr>`).join('')+`</tbody></table></div>`;
+}
+
+function renderApprovals(){
+  const a=S.actions;
+  const card=x=>{
+    const pend=x.status==='pending', mail=x.tool==='send_email';
+    const title=mail?(pend?'Send email':x.status==='executed'?'Done · email '+(x.result&&x.result.email==='sent'?'sent':'saved to outbox'):'Skipped')
+                    :(pend?'Record payment':x.status==='executed'?'Done · recorded in PayPal':'Skipped');
+    const what=mail?`${esc(x.invoice_number)} · ${esc(x.customer)}<details><summary>${esc(x.subject)}</summary><pre>${esc(x.body)}</pre></details>`
+                    :`${esc(x.invoice_number)} · ${esc(x.customer)} · ${money(x.amount)}`;
+    return `<div class="act ${x.status}"><b>${title}</b><br>${what}${x.reason?`<br><span style="color:var(--mut)">${esc(x.reason)}</span>`:''}
+      ${pend?`<div class="acts" style="margin-top:8px"><button class="btn small" data-ap="${x.id}">${mail?'Approve &amp; send email':'Approve &amp; update PayPal'}</button><button class="btn ghost small" data-rj="${x.id}">Not now</button></div>`:''}</div>`};
+  $('#approvals').innerHTML=`<h2>Waiting for your approval</h2><p class="sub">Nothing changes in PayPal and no email goes out until you approve it here.</p>`+
+   (a.length?a.slice().reverse().map(card).join(''):'<p style="color:var(--mut);margin:0">Nothing queued yet.</p>');
+}
+function renderOutbox(){
+  const o=S.outbox.slice(0,5);
+  $('#outbox').innerHTML=`<h2>Messages to customers</h2>`+(o.length?o.map(m=>`<div class="msg-line"><span class="badge ${m.status==='sent'?'PAID':'SENT'}">${m.status==='sent'?'SENT':'SAVED · DEMO'}</span> <b>${esc(m.customer)}</b> · ${esc(m.invoice_number)}
+    <details><summary>${esc(m.subject)}</summary><div style="color:var(--mut);font-size:13px;margin-top:4px">To: ${esc(m.to)}${m.redirected?' (redirected from '+esc(m.customer_email)+')':''}</div><pre>${esc(m.body)}</pre></details></div>`).join('')
+    :'<p class="sub" style="margin:0">No emails yet. Use <b>Email customer</b> on an overdue or part-paid invoice.</p>');
+}
+function renderSuggest(){const e=$('#suggest');if(!e.dataset.done){e.innerHTML=SUGGEST.map(t=>`<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join('');e.dataset.done=1}}
+
+const JH={'Content-Type':'application/json'};
+const MAILABLE=new Set(['OVERDUE','PARTIAL','DUPLICATE_PAYMENT','OVERPAID']);
+let mailCtx=null;
+async function openMail(fid){
+  const f=S.report.findings.find(x=>x.id===fid);
+  const d=await j('/api/email/draft',{method:'POST',headers:JH,body:JSON.stringify({invoice_id:f.invoice_id,kind:f.type})});
+  mailCtx=d;
+  $('#mFor').textContent=`${d.invoice_number} · ${d.customer}`;
+  $('#mTo').textContent=d.to;
+  let n='';
+  if(d.redirected)n+=`<div class="note warn">Demo safety is on: this goes to <b>${esc(d.to)}</b> instead of ${esc(d.customer_email)}.</div>`;
+  if(d.mode==='demo')n+=`<div class="note">Email isn't connected yet, so this will be saved in your outbox instead of being sent.</div>`;
+  $('#mNote').innerHTML=n;$('#mSubj').value=d.subject;$('#mBody').value=d.body;
+  $('#mSend').textContent=d.mode==='smtp'?'Send email':'Save to outbox';
+  $('#mail').showModal();
+}
+async function sendMail(){
+  const b=$('#mSend');b.disabled=true;
+  try{const r=await j('/api/email/send',{method:'POST',headers:JH,body:JSON.stringify({invoice_id:mailCtx.invoice_id,subject:$('#mSubj').value,body:$('#mBody').value,kind:mailCtx.kind})});
+    $('#mail').close();toast(r.status==='sent'?'Email sent to '+r.to:'Saved to outbox (email not connected)');await load()}
+  finally{b.disabled=false}
+}
+function rankList(rows,cls){
+  const max=Math.max(1,...rows.map(r=>r.total));
+  return `<div class="bars rank">`+rows.map(r=>`<div class="bar" title="${r.count} transaction${r.count===1?'':'s'}"><span>${esc(r.name)}<br><small style="color:var(--mut)">${r.share}% · ${r.count} payment${r.count===1?'':'s'}</small></span><i class="${cls}" style="width:${Math.max(3,r.total/max*100)}%"></i><em>${money(r.total)}</em></div>`).join('')+`</div>`;
+}
+function moneyHTML(){
+  const a=S.analytics;if(!a||!a.ledger_loaded)return '<p class="sub">Add bank data to see income and spending.</p>';
+  const mx=Math.max(1,...a.monthly.flatMap(m=>[m.income,m.spending]));
+  const mn=m=>{const [y,mo]=m.split('-');return new Date(y,mo-1,1).toLocaleString(undefined,{month:'short'})+" '"+y.slice(2)};
+  const tv=a.vendors[0],tc=a.clients[0];
+  return `<div class="tiles">
+    <div class="stat"><b class="pos">${money(a.income)}</b><span>Money in (from clients)</span></div>
+    <div class="stat"><b>${money(a.spending)}</b><span>Money out (to vendors)</span></div>
+    <div class="stat"><b class="${a.net>=0?'pos':'neg'}">${a.net<0?'-':''}${money(Math.abs(a.net))}</b><span>${a.net>=0?'Left over':'Overspent'}</span></div>
+    <div class="stat"><b style="font-size:18px">${tv?esc(tv.name):'—'}</b><span>Biggest vendor${tv?' · '+tv.share+'% of spending':''}</span></div></div>
+  <div class="card"><h2>Month by month</h2><div class="legend"><span><b class="in"></b>Money in</span><span><b class="out"></b>Money out</span></div>
+    <div class="mchart">${a.monthly.map(m=>`<div class="mg" title="${mn(m.month)}: in ${money(m.income)}, out ${money(m.spending)}"><div class="mbars"><i class="in" style="height:${m.income/mx*100}%"></i><i class="out" style="height:${m.spending/mx*100}%"></i></div><small>${mn(m.month)}</small></div>`).join('')}</div></div>
+  <div class="two"><div class="card"><h2>Where your money goes</h2><p class="sub">Spending by vendor</p>${rankList(a.vendors,'out')}</div>
+    <div class="card"><h2>Who pays you</h2><p class="sub">Income by client${tc?' · top: '+esc(tc.name):''}</p>${rankList(a.clients,'in')}</div></div>
+  <p class="sub" style="margin-top:12px">Based on ${a.rows} bank rows from ${esc(a.first_date)} to ${esc(a.last_date)}. Vendors are grouped by the payee name in your bank descriptions, and income is cash received (after any PayPal fees).</p>`;
+}
+async function useSample(){try{await j('/api/ledger/sample',{method:'POST'});toast('Sample bank ledger loaded');await load()}catch(e){toast(e.message)}}
+async function queueFix(id){
+  const f=S.report.findings.find(x=>x.id===id),a=f.suggested_action;
+  try{await j('/api/actions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({invoice_id:a.invoice_id,amount:a.amount,method:a.method,reason:'Bank shows this was paid; PayPal still says '+f.invoice.status})});
+    await load();toast('Fix queued. Approve it on the right.')}catch(e){toast(e.message)}
+}
+
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+  try{
+    if(d.tab){S.tab=d.tab;renderMain()}
+    else if(d.filter){S.filter=d.filter;renderMain()}
+    else if(d.open){S.open.has(d.open)?S.open.delete(d.open):S.open.add(d.open);renderMain()}
+    else if(d.mail)await openMail(d.mail);
+    else if(d.sendmail)await sendMail();
+    else if(d.closemail)$('#mail').close();
+    else if(d.fix)await queueFix(d.fix);
+    else if(d.explain){const f=S.report.findings.find(x=>x.id===d.explain);ask(`Explain the "${LABEL[f.type]}" issue${f.invoice_number?' on '+f.invoice_number:''} and what I should do next.`)}
+    else if(d.ap){t.disabled=true;await j('/api/actions/'+d.ap+'/approve',{method:'POST'});await load();toast('Done. PayPal has been updated.')}
+    else if(d.rj){await j('/api/actions/'+d.rj+'/reject',{method:'POST'});await load()}
+    else if(d.q)ask(d.q);
+  }catch(err){toast(err.message);load()}
+});
+document.addEventListener('change',e=>{if(e.target.id==='sort'){S.sort=e.target.value;renderMain()}});
+
+function addMsg(cls,html){const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;$('#chat').append(d);$('#chat').scrollTop=1e9;return d}
+async function ask(q){
+  q=q.trim();if(!q)return;$('#q').value='';
+  addMsg('u',esc(q));
+  const w=addMsg('a','<span class="typing"><i></i><i></i><i></i></span>');
+  try{
+    const r=await j('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:S.history})});
+    const names=[...new Set(r.tool_calls.map(c=>TOOLNAME[c.name]||c.name))];
+    w.innerHTML=md(r.reply)+(names.length?`<div class="tools">Assistant ${names.map(n=>`<span>${esc(n)}</span>`).join('')}</div>`:'');
+    S.history.push({role:'user',content:q},{role:'assistant',content:r.reply});
+    await load();
+  }catch(err){w.innerHTML='<p style="color:var(--hi)">Something went wrong: '+esc(err.message)+'</p>'}
+  $('#chat').scrollTop=1e9;
+}
+$('#send').onclick=()=>ask($('#q').value);
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter')ask($('#q').value)});
+$('#file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{await j('/api/ledger',{method:'POST',headers:{'Content-Type':'text/csv'},body:await f.text()});toast('Bank data loaded');await load()}catch(err){toast(err.message)}
+  e.target.value=''};
+load().catch(e=>{S.error=e.message;render()});
+</script></body></html>

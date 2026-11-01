@@ -1,0 +1,8 @@
+__pycache__/
+.pytest_cache/
+.env
+*.pyc
+.venv/
+bank_ledger.csv
+DEVPOST_WRITEUP.md
+PLAN_AND_SUBMISSION.md
